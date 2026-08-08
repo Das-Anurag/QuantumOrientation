@@ -215,9 +215,6 @@ createAxis(
 // 7. OrbitControls
 // ----------------------------------------
 
-import { OrbitControls }
-    from "three/addons/controls/OrbitControls.js";
-
 const controls =
     new OrbitControls(
         camera,
