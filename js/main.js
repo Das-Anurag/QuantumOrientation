@@ -3,9 +3,6 @@ import * as THREE from "three";
 import { OrbitControls }
     from "three/addons/controls/OrbitControls.js";
 
-import { Vector3 }
-    from "./functions.js";
-
 
 // ==================================================
 // 1. SCENE
@@ -28,17 +25,9 @@ const camera = new THREE.PerspectiveCamera(
     1000
 );
 
-camera.position.set(
-    10,
-    8,
-    10
-);
+camera.position.set(10, 8, 10);
 
-camera.lookAt(
-    0,
-    0,
-    0
-);
+camera.lookAt(0, 0, 0);
 
 
 // ==================================================
@@ -56,10 +45,7 @@ renderer.setSize(
 );
 
 renderer.setPixelRatio(
-    Math.min(
-        window.devicePixelRatio,
-        2
-    )
+    Math.min(window.devicePixelRatio, 2)
 );
 
 document.body.appendChild(
@@ -91,14 +77,10 @@ const directionalLight =
     );
 
 directionalLight.position.set(
-    5,
-    5,
-    5
+    5, 5, 5
 );
 
-scene.add(
-    directionalLight
-);
+scene.add(directionalLight);
 
 
 const ambientLight =
@@ -107,99 +89,71 @@ const ambientLight =
         0.1
     );
 
-scene.add(
-    ambientLight
-);
+scene.add(ambientLight);
 
 
 // ==================================================
-// 6. INPUT BOXES
+// 6. READ Φ FROM INPUT BOXES
 // ==================================================
 
-const alphaInput =
-    document.getElementById("alpha");
+const alpha =
+    Number(document.getElementById("alpha").value);
 
-const betaInput =
-    document.getElementById("beta");
+const beta =
+    Number(document.getElementById("beta").value);
 
-const gammaInput =
-    document.getElementById("gamma");
+const gamma =
+    Number(document.getElementById("gamma").value);
 
-const posAInput =
-    document.getElementById("posA");
 
-const posBInput =
-    document.getElementById("posB");
+const a =
+    Number(document.getElementById("posA").value);
 
-const posCInput =
-    document.getElementById("posC");
+const b =
+    Number(document.getElementById("posB").value);
+
+const c =
+    Number(document.getElementById("posC").value);
 
 
 // ==================================================
-// 7. MAIN VECTOR Φ
+// 7. CREATE MAIN VECTOR Φ
 // ==================================================
 
 const phiDirection =
-    new Vector3(
-        Number(alphaInput.value),
-        Number(betaInput.value),
-        Number(gammaInput.value)
+    new THREE.Vector3(
+        alpha,
+        beta,
+        gamma
     ).normalize();
 
 
-// ==================================================
-// 8. MAIN VECTOR Φ POSITION
-// ==================================================
-
 const phiPosition =
-    new Vector3(
-        Number(posAInput.value),
-        Number(posBInput.value),
-        Number(posCInput.value)
-    );
-
-
-// ==================================================
-// 9. CONVERT Φ TO THREE.Vector3
-// ==================================================
-
-const phiDirectionThree =
     new THREE.Vector3(
-        phiDirection.x,
-        phiDirection.y,
-        phiDirection.z
-    );
-
-const phiPositionThree =
-    new THREE.Vector3(
-        phiPosition.x,
-        phiPosition.y,
-        phiPosition.z
+        a,
+        b,
+        c
     );
 
 
 // ==================================================
-// 10. DRAW MAIN VECTOR Φ
+// 8. DRAW MAIN VECTOR Φ
 // ==================================================
 
 const phiArrow =
     new THREE.ArrowHelper(
-        phiDirectionThree,
-        phiPositionThree,
+        phiDirection,
+        phiPosition,
         2,
         0xff0000
     );
 
-scene.add(
-    phiArrow
-);
+scene.add(phiArrow);
 
 
 // ==================================================
-// 11. TEST POSITION (x,y,z)
+// 9. TEST POSITION
 // ==================================================
-
-// We choose one position for testing.
 
 const x = 3;
 const y = 2;
@@ -207,113 +161,60 @@ const z = 2;
 
 
 // ==================================================
-// 12. CREATE r_(x,y,z)
-// ==================================================
-
-const r =
-    new Vector3(
-        x,
-        y,
-        z
-    );
-
-
-// ==================================================
-// 13. CREATE UNIT VECTOR r̂_(x,y,z)
+// 10. CREATE r̂
 // ==================================================
 
 const rUnit =
-    r.normalize();
+    new THREE.Vector3(
+        x,
+        y,
+        z
+    ).normalize();
 
 
 // ==================================================
-// 14. CALCULATE r̂ · Φ̂
+// 11. CALCULATE r̂ · Φ̂
 // ==================================================
 
 const dot =
-    rUnit.dot(
-        phiDirection
-    );
+    rUnit.dot(phiDirection);
 
 
 // ==================================================
-// 15. CALCULATE EFFECTIVE UNIT VECTOR φ̂
+// 12. CALCULATE φ̂
 //
-// φ̂ = 2(r̂ · Φ̂)r̂ - Φ̂
+// φ̂ = 2(r̂ · Φ̂)r̂ − Φ̂
 // ==================================================
 
-const phi =
+const phiDirectionEffective =
     rUnit
-        .multiplyScalar(
-            2 * dot
-        )
-        .subtract(
-            phiDirection
-        );
+        .clone()
+        .multiplyScalar(2 * dot)
+        .sub(phiDirection);
 
 
 // ==================================================
-// 16. CONVERT φ̂ TO THREE.Vector3
-// ==================================================
-
-const phiThree =
-    new THREE.Vector3(
-        phi.x,
-        phi.y,
-        phi.z
-    );
-
-
-// ==================================================
-// 17. DRAW SMALL EFFECTIVE VECTOR
+// 13. DRAW EFFECTIVE VECTOR
 // ==================================================
 
 const phiArrow =
     new THREE.ArrowHelper(
-        phiThree,
-        new THREE.Vector3(
-            x,
-            y,
-            z
-        ),
+        phiDirectionEffective,
+        new THREE.Vector3(x, y, z),
         0.8,
         0x0000ff
     );
 
-scene.add(
-    phiArrow
-);
+scene.add(phiArrow);
 
 
 // ==================================================
-// 18. SHOW CALCULATED VALUE
-// ==================================================
-
-console.log(
-    "r̂ =",
-    rUnit.show()
-);
-
-console.log(
-    "r̂ · Φ̂ =",
-    dot
-);
-
-console.log(
-    "φ̂ =",
-    phi.show()
-);
-
-
-// ==================================================
-// 19. ANIMATION LOOP
+// 14. ANIMATION
 // ==================================================
 
 function animate() {
 
-    requestAnimationFrame(
-        animate
-    );
+    requestAnimationFrame(animate);
 
     controls.update();
 
@@ -327,7 +228,7 @@ animate();
 
 
 // ==================================================
-// 20. WINDOW RESIZE
+// 15. WINDOW RESIZE
 // ==================================================
 
 window.addEventListener(
