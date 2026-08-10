@@ -45,9 +45,10 @@ camera.lookAt(
 // 3. RENDERER
 // ==================================================
 
-const renderer = new THREE.WebGLRenderer({
-    antialias: true
-});
+const renderer =
+    new THREE.WebGLRenderer({
+        antialias: true
+    });
 
 renderer.setSize(
     window.innerWidth,
@@ -70,10 +71,11 @@ document.body.appendChild(
 // 4. ORBIT CONTROLS
 // ==================================================
 
-const controls = new OrbitControls(
-    camera,
-    renderer.domElement
-);
+const controls =
+    new OrbitControls(
+        camera,
+        renderer.domElement
+    );
 
 controls.enableDamping = true;
 
@@ -111,7 +113,7 @@ scene.add(
 
 
 // ==================================================
-// 7. READ Φ FROM INPUT BOXES
+// 6. INPUT BOXES
 // ==================================================
 
 const alphaInput =
@@ -122,7 +124,6 @@ const betaInput =
 
 const gammaInput =
     document.getElementById("gamma");
-
 
 const posAInput =
     document.getElementById("posA");
@@ -135,7 +136,7 @@ const posCInput =
 
 
 // ==================================================
-// 8. CREATE MATHEMATICAL VECTOR Φ
+// 7. MAIN VECTOR Φ
 // ==================================================
 
 const phiDirection =
@@ -143,8 +144,12 @@ const phiDirection =
         Number(alphaInput.value),
         Number(betaInput.value),
         Number(gammaInput.value)
-    );
+    ).normalize();
 
+
+// ==================================================
+// 8. MAIN VECTOR Φ POSITION
+// ==================================================
 
 const phiPosition =
     new Vector3(
@@ -155,7 +160,7 @@ const phiPosition =
 
 
 // ==================================================
-// 9. CONVERT OUR Vector3 TO THREE.Vector3
+// 9. CONVERT Φ TO THREE.Vector3
 // ==================================================
 
 const phiDirectionThree =
@@ -163,8 +168,7 @@ const phiDirectionThree =
         phiDirection.x,
         phiDirection.y,
         phiDirection.z
-    ).normalize();
-
+    );
 
 const phiPositionThree =
     new THREE.Vector3(
@@ -175,14 +179,14 @@ const phiPositionThree =
 
 
 // ==================================================
-// 10. CREATE THE MAIN VECTOR Φ
+// 10. DRAW MAIN VECTOR Φ
 // ==================================================
 
 const phiArrow =
     new THREE.ArrowHelper(
         phiDirectionThree,
         phiPositionThree,
-        5,
+        2,
         0xff0000
     );
 
@@ -192,175 +196,117 @@ scene.add(
 
 
 // ==================================================
-// 11. INVISIBLE HIT AREA FOR Φ
+// 11. TEST POSITION (x,y,z)
 // ==================================================
 
-const phiHitBox =
-    new THREE.Mesh(
-        new THREE.SphereGeometry(
-            0.35,
-            16,
-            16
-        ),
+// We choose one position for testing.
 
-        new THREE.MeshBasicMaterial({
-            transparent: true,
-            opacity: 0
-        })
-    );
-
-phiHitBox.position.copy(
-    phiPositionThree
-);
-
-phiHitBox.userData.vectorName =
-    "vector Φ_(" +
-    alphaInput.value + "," +
-    betaInput.value + "," +
-    gammaInput.value +
-    ") at (" +
-    posAInput.value + "," +
-    posBInput.value + "," +
-    posCInput.value +
-    ")";
-
-scene.add(
-    phiHitBox
-);
+const x = 3;
+const y = 2;
+const z = 2;
 
 
 // ==================================================
-// 12. RAYCASTER
+// 12. CREATE r_(x,y,z)
 // ==================================================
 
-const raycaster =
-    new THREE.Raycaster();
-
-const pointer =
-    new THREE.Vector2();
-
-
-// ==================================================
-// 13. VECTOR NAME DISPLAY
-// ==================================================
-
-const vectorLabel =
-    document.createElement("div");
-
-vectorLabel.style.position =
-    "fixed";
-
-vectorLabel.style.left =
-    "50%";
-
-vectorLabel.style.bottom =
-    "20px";
-
-vectorLabel.style.transform =
-    "translateX(-50%)";
-
-vectorLabel.style.padding =
-    "8px 12px";
-
-vectorLabel.style.background =
-    "rgba(0, 0, 0, 0.75)";
-
-vectorLabel.style.color =
-    "white";
-
-vectorLabel.style.fontFamily =
-    "Arial";
-
-vectorLabel.style.fontSize =
-    "16px";
-
-vectorLabel.style.borderRadius =
-    "6px";
-
-vectorLabel.style.zIndex =
-    "100";
-
-vectorLabel.style.display =
-    "none";
-
-document.body.appendChild(
-    vectorLabel
-);
-
-
-// ==================================================
-// 14. SELECT VECTOR
-// ==================================================
-
-function selectVector(event) {
-
-    const rect =
-        renderer.domElement.getBoundingClientRect();
-
-
-    pointer.x =
-        (
-            (event.clientX - rect.left)
-            /
-            rect.width
-        ) * 2 - 1;
-
-
-    pointer.y =
-        -(
-            (event.clientY - rect.top)
-            /
-            rect.height
-        ) * 2 + 1;
-
-
-    raycaster.setFromCamera(
-        pointer,
-        camera
+const r =
+    new Vector3(
+        x,
+        y,
+        z
     );
 
 
-    const intersections =
-        raycaster.intersectObjects(
-            [phiHitBox],
-            false
+// ==================================================
+// 13. CREATE UNIT VECTOR r̂_(x,y,z)
+// ==================================================
+
+const rUnit =
+    r.normalize();
+
+
+// ==================================================
+// 14. CALCULATE r̂ · Φ̂
+// ==================================================
+
+const dot =
+    rUnit.dot(
+        phiDirection
+    );
+
+
+// ==================================================
+// 15. CALCULATE EFFECTIVE UNIT VECTOR φ̂
+//
+// φ̂ = 2(r̂ · Φ̂)r̂ - Φ̂
+// ==================================================
+
+const phi =
+    rUnit
+        .multiplyScalar(
+            2 * dot
+        )
+        .subtract(
+            phiDirection
         );
 
 
-    if (intersections.length > 0) {
+// ==================================================
+// 16. CONVERT φ̂ TO THREE.Vector3
+// ==================================================
 
-        vectorLabel.textContent =
-            intersections[0]
-                .object
-                .userData
-                .vectorName;
-
-        vectorLabel.style.display =
-            "block";
-
-    }
-
-    else {
-
-        vectorLabel.style.display =
-            "none";
-
-    }
-}
+const phiThree =
+    new THREE.Vector3(
+        phi.x,
+        phi.y,
+        phi.z
+    );
 
 
 // ==================================================
-// 15. MOUSE + TOUCH
+// 17. DRAW SMALL EFFECTIVE VECTOR
 // ==================================================
 
-renderer.domElement.addEventListener(
-    "pointerdown",
-    selectVector
+const phiArrow =
+    new THREE.ArrowHelper(
+        phiThree,
+        new THREE.Vector3(
+            x,
+            y,
+            z
+        ),
+        0.8,
+        0x0000ff
+    );
+
+scene.add(
+    phiArrow
 );
 
 
 // ==================================================
-// 16. ANIMATION LOOP
+// 18. SHOW CALCULATED VALUE
+// ==================================================
+
+console.log(
+    "r̂ =",
+    rUnit.show()
+);
+
+console.log(
+    "r̂ · Φ̂ =",
+    dot
+);
+
+console.log(
+    "φ̂ =",
+    phi.show()
+);
+
+
+// ==================================================
+// 19. ANIMATION LOOP
 // ==================================================
 
 function animate() {
@@ -381,7 +327,7 @@ animate();
 
 
 // ==================================================
-// 17. WINDOW RESIZE
+// 20. WINDOW RESIZE
 // ==================================================
 
 window.addEventListener(
@@ -392,9 +338,7 @@ window.addEventListener(
             window.innerWidth /
             window.innerHeight;
 
-
         camera.updateProjectionMatrix();
-
 
         renderer.setSize(
             window.innerWidth,
