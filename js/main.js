@@ -197,7 +197,7 @@ const phiDirectionEffective =
 // 13. DRAW EFFECTIVE VECTOR
 // ==================================================
 
-const phiArrow =
+const effectivePhiArrow =
     new THREE.ArrowHelper(
         phiDirectionEffective,
         new THREE.Vector3(x, y, z),
@@ -205,8 +205,7 @@ const phiArrow =
         0x0000ff
     );
 
-scene.add(phiArrow);
-
+scene.add(effectivePhiArrow);
 
 // ==================================================
 // 14. ANIMATION
