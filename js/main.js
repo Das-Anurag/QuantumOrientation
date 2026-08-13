@@ -206,9 +206,66 @@ const effectivePhiArrow =
     );
 
 scene.add(effectivePhiArrow);
+// ==================================================
+// 14. HIT AREA FOR MAIN VECTOR Φ
+// ==================================================
+
+const phiHitBox =
+    new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            0.15,
+            0.15,
+            0.6,
+            12
+        ),
+
+        new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0
+        })
+    );
+
+
+// Cylinder normally points along Y-axis.
+// Rotate it to point in the direction of Φ.
+
+const yAxis =
+    new THREE.Vector3(0, 1, 0);
+
+phiHitBox.quaternion.setFromUnitVectors(
+    yAxis,
+    phiDirection
+);
+
+
+// Put the hit area at the middle of Φ.
+
+phiHitBox.position.copy(
+    phiPosition
+);
+
+phiHitBox.position.add(
+    phiDirection.clone().multiplyScalar(0.3)
+);
+
+
+// Give the hit area the name of Φ.
+
+phiHitBox.userData.vectorName =
+    "vector Φ_(" +
+    alpha + "," +
+    beta + "," +
+    gamma +
+    ") at (" +
+    a + "," +
+    b + "," +
+    c +
+    ")";
+
+scene.add(phiHitBox);
 
 // ==================================================
-// 14. ANIMATION
+// 15. ANIMATION
 // ==================================================
 
 function animate() {
@@ -227,7 +284,7 @@ animate();
 
 
 // ==================================================
-// 15. WINDOW RESIZE
+// 16. WINDOW RESIZE
 // ==================================================
 
 window.addEventListener(
