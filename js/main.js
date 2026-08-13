@@ -144,7 +144,7 @@ const phiArrow =
     new THREE.ArrowHelper(
         phiDirection,
         phiPosition,
-        2,
+        0.6,
         0xff0000
     );
 
@@ -201,7 +201,7 @@ const effectivePhiArrow =
     new THREE.ArrowHelper(
         phiDirectionEffective,
         new THREE.Vector3(x, y, z),
-        0.8,
+        0.6,
         0x0000ff
     );
 
