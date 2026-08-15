@@ -263,7 +263,128 @@ phiHitBox.userData.vectorName =
     ")";
 
 scene.add(phiHitBox);
+// ==================================================
+// 15. RAYCASTER
+// ==================================================
 
+const raycaster =
+    new THREE.Raycaster();
+
+const pointer =
+    new THREE.Vector2();
+// ==================================================
+// 16. VECTOR NAME DISPLAY
+// ==================================================
+
+const vectorLabel =
+    document.createElement("div");
+
+vectorLabel.style.position =
+    "fixed";
+
+vectorLabel.style.left =
+    "50%";
+
+vectorLabel.style.bottom =
+    "20px";
+
+vectorLabel.style.transform =
+    "translateX(-50%)";
+
+vectorLabel.style.padding =
+    "8px 12px";
+
+vectorLabel.style.background =
+    "rgba(0, 0, 0, 0.75)";
+
+vectorLabel.style.color =
+    "white";
+
+vectorLabel.style.fontFamily =
+    "Arial";
+
+vectorLabel.style.fontSize =
+    "16px";
+
+vectorLabel.style.borderRadius =
+    "6px";
+
+vectorLabel.style.zIndex =
+    "100";
+
+vectorLabel.style.display =
+    "none";
+
+document.body.appendChild(
+    vectorLabel
+);
+// ==================================================
+// 17. SELECT VECTOR
+// ==================================================
+
+function selectVector(event) {
+
+    const rect =
+        renderer.domElement.getBoundingClientRect();
+
+
+    pointer.x =
+        (
+            (event.clientX - rect.left)
+            /
+            rect.width
+        ) * 2 - 1;
+
+
+    pointer.y =
+        -(
+            (event.clientY - rect.top)
+            /
+            rect.height
+        ) * 2 + 1;
+
+
+    raycaster.setFromCamera(
+        pointer,
+        camera
+    );
+
+
+    const intersections =
+        raycaster.intersectObjects(
+            [phiHitBox],
+            false
+        );
+
+
+    if (intersections.length > 0) {
+
+        vectorLabel.textContent =
+            intersections[0]
+                .object
+                .userData
+                .vectorName;
+
+        vectorLabel.style.display =
+            "block";
+
+    }
+
+    else {
+
+        vectorLabel.style.display =
+            "none";
+
+    }
+}
+// ==================================================
+// 18. MOUSE + TOUCH
+// ==================================================
+
+renderer.domElement.addEventListener(
+    "pointerdown",
+    selectVector
+);
 // ==================================================
 // 15. ANIMATION
 // ==================================================
