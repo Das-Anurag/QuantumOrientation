@@ -207,6 +207,69 @@ const effectivePhiArrow =
 
 scene.add(effectivePhiArrow);
 // ==================================================
+// 19. HIT AREA FOR EFFECTIVE VECTOR φ
+// ==================================================
+
+const effectivePhiHitBox =
+    new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            0.15,
+            0.15,
+            0.8,
+            12
+        ),
+
+        new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0
+        })
+    );
+
+
+// Cylinder normally points along Y-axis.
+// Rotate it to point in the direction of φ.
+
+const yAxisEffective =
+    new THREE.Vector3(0, 1, 0);
+
+effectivePhiHitBox.quaternion.setFromUnitVectors(
+    yAxisEffective,
+    phiDirectionEffective
+);
+
+
+// Put the hit area at the middle of the vector.
+
+effectivePhiHitBox.position.set(
+    x,
+    y,
+    z
+);
+
+effectivePhiHitBox.position.add(
+    phiDirectionEffective
+        .clone()
+        .multiplyScalar(0.4)
+);
+
+
+// Give the hit area the vector's name.
+
+effectivePhiHitBox.userData.vectorName =
+    "vector φ_(" +
+    x + "," +
+    y + "," +
+    z +
+    ") = (" +
+    phiDirectionEffective.x.toFixed(3) + "," +
+    phiDirectionEffective.y.toFixed(3) + "," +
+    phiDirectionEffective.z.toFixed(3) +
+    ")";
+
+scene.add(
+    effectivePhiHitBox
+);
+// ==================================================
 // 14. HIT AREA FOR MAIN VECTOR Φ
 // ==================================================
 
@@ -350,11 +413,14 @@ function selectVector(event) {
     );
 
 
-    const intersections =
-        raycaster.intersectObjects(
-            [phiHitBox],
-            false
-        );
+const intersections =
+    raycaster.intersectObjects(
+        [
+            phiHitBox,
+            effectivePhiHitBox
+        ],
+        false
+    );
 
 
     if (intersections.length > 0) {
