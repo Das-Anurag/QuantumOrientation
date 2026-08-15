@@ -93,57 +93,36 @@ scene.add(ambientLight);
 
 
 // ==================================================
-// 6. READ Φ FROM INPUT BOXES
+// 6. INPUT BOXES
 // ==================================================
 
-const alpha =
-    Number(document.getElementById("alpha").value);
+const alphaInput =
+    document.getElementById("alpha");
 
-const beta =
-    Number(document.getElementById("beta").value);
+const betaInput =
+    document.getElementById("beta");
 
-const gamma =
-    Number(document.getElementById("gamma").value);
+const gammaInput =
+    document.getElementById("gamma");
 
+const posAInput =
+    document.getElementById("posA");
 
-const a =
-    Number(document.getElementById("posA").value);
+const posBInput =
+    document.getElementById("posB");
 
-const b =
-    Number(document.getElementById("posB").value);
-
-const c =
-    Number(document.getElementById("posC").value);
-
-
-// ==================================================
-// 7. CREATE MAIN VECTOR Φ
-// ==================================================
-
-const phiDirection =
-    new THREE.Vector3(
-        alpha,
-        beta,
-        gamma
-    ).normalize();
-
-
-const phiPosition =
-    new THREE.Vector3(
-        a,
-        b,
-        c
-    );
+const posCInput =
+    document.getElementById("posC");
 
 
 // ==================================================
-// 8. DRAW MAIN VECTOR Φ
+// 7. MAIN VECTOR Φ
 // ==================================================
 
 const phiArrow =
     new THREE.ArrowHelper(
-        phiDirection,
-        phiPosition,
+        new THREE.Vector3(1, 1, 0).normalize(),
+        new THREE.Vector3(0, 0, 0),
         0.6,
         0xff0000
     );
@@ -152,7 +131,7 @@ scene.add(phiArrow);
 
 
 // ==================================================
-// 9. TEST POSITION
+// 8. TEST POSITION OF EFFECTIVE VECTOR
 // ==================================================
 
 const x = 3;
@@ -161,116 +140,22 @@ const z = 2;
 
 
 // ==================================================
-// 10. CREATE r̂
-// ==================================================
-
-const rUnit =
-    new THREE.Vector3(
-        x,
-        y,
-        z
-    ).normalize();
-
-
-// ==================================================
-// 11. CALCULATE r̂ · Φ̂
-// ==================================================
-
-const dot =
-    rUnit.dot(phiDirection);
-
-
-// ==================================================
-// 12. CALCULATE φ̂
-//
-// φ̂ = 2(r̂ · Φ̂)r̂ − Φ̂
-// ==================================================
-
-const phiDirectionEffective =
-    rUnit
-        .clone()
-        .multiplyScalar(2 * dot)
-        .sub(phiDirection);
-
-
-// ==================================================
-// 13. DRAW EFFECTIVE VECTOR
+// 9. EFFECTIVE VECTOR φ
 // ==================================================
 
 const effectivePhiArrow =
     new THREE.ArrowHelper(
-        phiDirectionEffective,
+        new THREE.Vector3(0, 0, 1),
         new THREE.Vector3(x, y, z),
         0.6,
         0x0000ff
     );
 
 scene.add(effectivePhiArrow);
+
+
 // ==================================================
-// 19. HIT AREA FOR EFFECTIVE VECTOR φ
-// ==================================================
-
-const effectivePhiHitBox =
-    new THREE.Mesh(
-        new THREE.CylinderGeometry(
-            0.15,
-            0.15,
-            0.8,
-            12
-        ),
-
-        new THREE.MeshBasicMaterial({
-            transparent: true,
-            opacity: 0
-        })
-    );
-
-
-// Cylinder normally points along Y-axis.
-// Rotate it to point in the direction of φ.
-
-const yAxisEffective =
-    new THREE.Vector3(0, 1, 0);
-
-effectivePhiHitBox.quaternion.setFromUnitVectors(
-    yAxisEffective,
-    phiDirectionEffective
-);
-
-
-// Put the hit area at the middle of the vector.
-
-effectivePhiHitBox.position.set(
-    x,
-    y,
-    z
-);
-
-effectivePhiHitBox.position.add(
-    phiDirectionEffective
-        .clone()
-        .multiplyScalar(0.4)
-);
-
-
-// Give the hit area the vector's name.
-
-effectivePhiHitBox.userData.vectorName =
-    "vector φ_(" +
-    x + "," +
-    y + "," +
-    z +
-    ") = (" +
-    phiDirectionEffective.x.toFixed(3) + "," +
-    phiDirectionEffective.y.toFixed(3) + "," +
-    phiDirectionEffective.z.toFixed(3) +
-    ")";
-
-scene.add(
-    effectivePhiHitBox
-);
-// ==================================================
-// 14. HIT AREA FOR MAIN VECTOR Φ
+// 10. HIT AREA FOR MAIN VECTOR Φ
 // ==================================================
 
 const phiHitBox =
@@ -288,46 +173,33 @@ const phiHitBox =
         })
     );
 
-
-// Cylinder normally points along Y-axis.
-// Rotate it to point in the direction of Φ.
-
-const yAxis =
-    new THREE.Vector3(0, 1, 0);
-
-phiHitBox.quaternion.setFromUnitVectors(
-    yAxis,
-    phiDirection
-);
-
-
-// Put the hit area at the middle of Φ.
-
-phiHitBox.position.copy(
-    phiPosition
-);
-
-phiHitBox.position.add(
-    phiDirection.clone().multiplyScalar(0.3)
-);
-
-
-// Give the hit area the name of Φ.
-
-phiHitBox.userData.vectorName =
-    "vector Φ_(" +
-    alpha + "," +
-    beta + "," +
-    gamma +
-    ") at (" +
-    a + "," +
-    b + "," +
-    c +
-    ")";
-
 scene.add(phiHitBox);
+
+
 // ==================================================
-// 15. RAYCASTER
+// 11. HIT AREA FOR EFFECTIVE VECTOR φ
+// ==================================================
+
+const effectivePhiHitBox =
+    new THREE.Mesh(
+        new THREE.CylinderGeometry(
+            0.15,
+            0.15,
+            0.6,
+            12
+        ),
+
+        new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0
+        })
+    );
+
+scene.add(effectivePhiHitBox);
+
+
+// ==================================================
+// 12. RAYCASTER
 // ==================================================
 
 const raycaster =
@@ -335,8 +207,10 @@ const raycaster =
 
 const pointer =
     new THREE.Vector2();
+
+
 // ==================================================
-// 16. VECTOR NAME DISPLAY
+// 13. VECTOR NAME DISPLAY
 // ==================================================
 
 const vectorLabel =
@@ -381,6 +255,291 @@ vectorLabel.style.display =
 document.body.appendChild(
     vectorLabel
 );
+
+
+// ==================================================
+// 14. UPDATE ALL VECTOR DATA
+// ==================================================
+
+function updateVectors() {
+
+    // ----------------------------------------------
+    // Read Φ direction
+    // ----------------------------------------------
+
+    const alpha =
+        Number(alphaInput.value);
+
+    const beta =
+        Number(betaInput.value);
+
+    const gamma =
+        Number(gammaInput.value);
+
+
+    // ----------------------------------------------
+    // Read Φ position
+    // ----------------------------------------------
+
+    const a =
+        Number(posAInput.value);
+
+    const b =
+        Number(posBInput.value);
+
+    const c =
+        Number(posCInput.value);
+
+
+    // ----------------------------------------------
+    // Create normalized Φ
+    // ----------------------------------------------
+
+    const phiDirection =
+        new THREE.Vector3(
+            alpha,
+            beta,
+            gamma
+        );
+
+
+    // Prevent division by zero
+    if (phiDirection.length() === 0) {
+
+        phiDirection.set(
+            1,
+            0,
+            0
+        );
+
+    }
+
+    phiDirection.normalize();
+
+
+    // ----------------------------------------------
+    // Create Φ position
+    // ----------------------------------------------
+
+    const phiPosition =
+        new THREE.Vector3(
+            a,
+            b,
+            c
+        );
+
+
+    // ----------------------------------------------
+    // Update visible Φ
+    // ----------------------------------------------
+
+    phiArrow.position.copy(
+        phiPosition
+    );
+
+    phiArrow.setDirection(
+        phiDirection
+    );
+
+    phiArrow.setLength(
+        0.6
+    );
+
+
+    // ----------------------------------------------
+    // Create r̂_(x,y,z)
+    // ----------------------------------------------
+
+    const rUnit =
+        new THREE.Vector3(
+            x,
+            y,
+            z
+        );
+
+
+    // Position (0,0,0) is not allowed
+    // because its unit vector is undefined.
+
+    if (rUnit.length() === 0) {
+        return;
+    }
+
+    rUnit.normalize();
+
+
+    // ----------------------------------------------
+    // Calculate r̂ · Φ̂
+    // ----------------------------------------------
+
+    const dot =
+        rUnit.dot(
+            phiDirection
+        );
+
+
+    // ----------------------------------------------
+    // Calculate effective φ̂
+    //
+    // φ̂ = 2(r̂ · Φ̂)r̂ − Φ̂
+    // ----------------------------------------------
+
+    const phiDirectionEffective =
+        rUnit
+            .clone()
+            .multiplyScalar(
+                2 * dot
+            )
+            .sub(
+                phiDirection
+            )
+            .normalize();
+
+
+    // ----------------------------------------------
+    // Update visible effective vector
+    // ----------------------------------------------
+
+    effectivePhiArrow.position.set(
+        x,
+        y,
+        z
+    );
+
+    effectivePhiArrow.setDirection(
+        phiDirectionEffective
+    );
+
+    effectivePhiArrow.setLength(
+        0.6
+    );
+
+
+    // ----------------------------------------------
+    // Position Φ hit area
+    // ----------------------------------------------
+
+    phiHitBox.position.copy(
+        phiPosition
+    );
+
+    phiHitBox.position.add(
+        phiDirection
+            .clone()
+            .multiplyScalar(0.3)
+    );
+
+
+    // Orient Φ hit area
+
+    phiHitBox.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        phiDirection
+    );
+
+
+    // ----------------------------------------------
+    // Name of Φ
+    // ----------------------------------------------
+
+    phiHitBox.userData.vectorName =
+        "vector Φ_(" +
+        alpha + "," +
+        beta + "," +
+        gamma +
+        ") at (" +
+        a + "," +
+        b + "," +
+        c +
+        ")";
+
+
+    // ----------------------------------------------
+    // Position effective-vector hit area
+    // ----------------------------------------------
+
+    effectivePhiHitBox.position.set(
+        x,
+        y,
+        z
+    );
+
+    effectivePhiHitBox.position.add(
+        phiDirectionEffective
+            .clone()
+            .multiplyScalar(0.3)
+    );
+
+
+    // Orient effective hit area
+
+    effectivePhiHitBox.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        phiDirectionEffective
+    );
+
+
+    // ----------------------------------------------
+    // Name of effective vector
+    // ----------------------------------------------
+
+    effectivePhiHitBox.userData.vectorName =
+        "vector φ_(" +
+        x + "," +
+        y + "," +
+        z +
+        ") = (" +
+        phiDirectionEffective.x.toFixed(3) +
+        "," +
+        phiDirectionEffective.y.toFixed(3) +
+        "," +
+        phiDirectionEffective.z.toFixed(3) +
+        ")";
+}
+
+
+// ==================================================
+// 15. INPUT EVENT
+// ==================================================
+
+alphaInput.addEventListener(
+    "input",
+    updateVectors
+);
+
+betaInput.addEventListener(
+    "input",
+    updateVectors
+);
+
+gammaInput.addEventListener(
+    "input",
+    updateVectors
+);
+
+posAInput.addEventListener(
+    "input",
+    updateVectors
+);
+
+posBInput.addEventListener(
+    "input",
+    updateVectors
+);
+
+posCInput.addEventListener(
+    "input",
+    updateVectors
+);
+
+
+// ==================================================
+// 16. INITIAL UPDATE
+// ==================================================
+
+updateVectors();
+
+
 // ==================================================
 // 17. SELECT VECTOR
 // ==================================================
@@ -413,14 +572,14 @@ function selectVector(event) {
     );
 
 
-const intersections =
-    raycaster.intersectObjects(
-        [
-            phiHitBox,
-            effectivePhiHitBox
-        ],
-        false
-    );
+    const intersections =
+        raycaster.intersectObjects(
+            [
+                phiHitBox,
+                effectivePhiHitBox
+            ],
+            false
+        );
 
 
     if (intersections.length > 0) {
@@ -440,9 +599,10 @@ const intersections =
 
         vectorLabel.style.display =
             "none";
-
     }
 }
+
+
 // ==================================================
 // 18. MOUSE + TOUCH
 // ==================================================
@@ -451,13 +611,17 @@ renderer.domElement.addEventListener(
     "pointerdown",
     selectVector
 );
+
+
 // ==================================================
-// 15. ANIMATION
+// 19. ANIMATION LOOP
 // ==================================================
 
 function animate() {
 
-    requestAnimationFrame(animate);
+    requestAnimationFrame(
+        animate
+    );
 
     controls.update();
 
@@ -471,7 +635,7 @@ animate();
 
 
 // ==================================================
-// 16. WINDOW RESIZE
+// 20. WINDOW RESIZE
 // ==================================================
 
 window.addEventListener(
@@ -488,6 +652,5 @@ window.addEventListener(
             window.innerWidth,
             window.innerHeight
         );
-
     }
 );
