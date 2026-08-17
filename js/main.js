@@ -11,7 +11,7 @@ import { OrbitControls }
 const scene = new THREE.Scene();
 
 scene.background =
-    new THREE.Color(#FFFFFF);
+    new THREE.Color(0xFFFFFF);
 
 
 // ==================================================
