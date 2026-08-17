@@ -136,7 +136,7 @@ scene.add(phiArrow);
 
 // Distance between neighboring sample points.
 
-const gridSpacing = 0.5;
+const gridSpacing = 0.35;
 
 
 // Number of sample points along each direction.
