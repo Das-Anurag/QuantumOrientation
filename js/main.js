@@ -77,7 +77,9 @@ const directionalLight =
     );
 
 directionalLight.position.set(
-    5, 5, 5
+    5,
+    5,
+    5
 );
 
 scene.add(directionalLight);
@@ -121,9 +123,20 @@ const posCInput =
 
 const phiArrow =
     new THREE.ArrowHelper(
-        new THREE.Vector3(1, 1, 0).normalize(),
-        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(
+            1,
+            1,
+            0
+        ).normalize(),
+
+        new THREE.Vector3(
+            0,
+            0,
+            0
+        ),
+
         0.6,
+
         0xff0000
     );
 
@@ -142,14 +155,161 @@ const vectorLength = 0.35;
 
 
 // ==================================================
-// 9. EFFECTIVE VECTOR FIELD
+// 9. COLORS
+// ==================================================
+
+// Tail color: lighter blue
+
+const tailColor =
+    new THREE.Color(0x87CEFA);
+
+
+// Head color: deep blue
+
+const headColor =
+    new THREE.Color(0x00008B);
+
+
+// ==================================================
+// 10. EFFECTIVE VECTOR FIELD
 // ==================================================
 
 const effectiveVectors = [];
 
 
 // ==================================================
-// 10. CREATE EFFECTIVE VECTOR
+// 11. CREATE GRADIENT SHAFT
+// ==================================================
+
+function createGradientShaft(
+    shaftLength
+) {
+
+    // --------------------------------------------------
+    // Create cylinder geometry
+    // --------------------------------------------------
+
+    const radialSegments = 8;
+
+    const heightSegments = 16;
+
+
+    const geometry =
+        new THREE.CylinderGeometry(
+            0.025,
+            0.025,
+            shaftLength,
+            radialSegments,
+            heightSegments,
+            false
+        );
+
+
+    // --------------------------------------------------
+    // Create vertex colors
+    // --------------------------------------------------
+
+    const colors = [];
+
+    const position =
+        geometry.attributes.position;
+
+
+    const color =
+        new THREE.Color();
+
+
+    // Cylinder geometry is centered around Y = 0.
+    //
+    // Bottom:
+    //     Y = -shaftLength / 2
+    //
+    // Top:
+    //     Y = +shaftLength / 2
+    //
+    // Therefore the color is calculated from Y.
+
+    for (
+        let i = 0;
+        i < position.count;
+        i++
+    ) {
+
+        const y =
+            position.getY(i);
+
+
+        let t =
+            (
+                y +
+                shaftLength / 2
+            )
+            /
+            shaftLength;
+
+
+        // Keep t between 0 and 1
+
+        t =
+            Math.max(
+                0,
+                Math.min(
+                    1,
+                    t
+                )
+            );
+
+
+        // Smooth interpolation
+
+        color.copy(
+            tailColor
+        ).lerp(
+            headColor,
+            t
+        );
+
+
+        colors.push(
+            color.r,
+            color.g,
+            color.b
+        );
+    }
+
+
+    geometry.setAttribute(
+        "color",
+        new THREE.Float32BufferAttribute(
+            colors,
+            3
+        )
+    );
+
+
+    // --------------------------------------------------
+    // Gradient material
+    // --------------------------------------------------
+
+    const material =
+        new THREE.MeshBasicMaterial({
+            vertexColors: true
+        });
+
+
+    const shaft =
+        new THREE.Mesh(
+            geometry,
+            material
+        );
+
+
+    return shaft;
+}
+
+
+// ==================================================
+// 12. CREATE EFFECTIVE VECTOR
 // ==================================================
 
 function createEffectiveVector() {
@@ -158,44 +318,37 @@ function createEffectiveVector() {
         new THREE.Group();
 
 
-    // --------------------------------------------------
-    // Shaft
-    // --------------------------------------------------
-
-    const shaftGeometry =
-        new THREE.CylinderGeometry(
-            0.025,
-            0.025,
-            vectorLength * 0.72,
-            8,
-            1,
-            false
-        );
-
-
-    const shaftMaterial =
-        new THREE.MeshBasicMaterial({
-            color: 0x6FA8DC
-        });
-
-
-    const shaft =
-        new THREE.Mesh(
-            shaftGeometry,
-            shaftMaterial
-        );
-
-
-    group.add(shaft);
-
-
-    // --------------------------------------------------
-    // Arrowhead
-    // --------------------------------------------------
+    // ==================================================
+    // Total vector dimensions
+    // ==================================================
 
     const headLength =
         vectorLength * 0.28;
 
+
+    const shaftLength =
+        vectorLength -
+        headLength;
+
+
+    // ==================================================
+    // Gradient shaft
+    // ==================================================
+
+    const shaft =
+        createGradientShaft(
+            shaftLength
+        );
+
+
+    group.add(
+        shaft
+    );
+
+
+    // ==================================================
+    // Deep-blue arrowhead
+    // ==================================================
 
     const headGeometry =
         new THREE.ConeGeometry(
@@ -207,7 +360,7 @@ function createEffectiveVector() {
 
     const headMaterial =
         new THREE.MeshBasicMaterial({
-            color: 0x00008B
+            color: headColor
         });
 
 
@@ -218,12 +371,14 @@ function createEffectiveVector() {
         );
 
 
-    group.add(head);
+    group.add(
+        head
+    );
 
 
-    // --------------------------------------------------
-    // Store parts
-    // --------------------------------------------------
+    // ==================================================
+    // Store the parts
+    // ==================================================
 
     group.userData.shaft =
         shaft;
@@ -237,7 +392,7 @@ function createEffectiveVector() {
 
 
 // ==================================================
-// 11. CREATE SAMPLING FIELD
+// 13. CREATE 3D SAMPLING FIELD
 // ==================================================
 
 for (
@@ -263,22 +418,32 @@ for (
                 (
                     ix -
                     (gridCount - 1) / 2
-                ) * gridSpacing;
+                )
+                *
+                gridSpacing;
 
 
             const y =
                 (
                     iy -
                     (gridCount - 1) / 2
-                ) * gridSpacing;
+                )
+                *
+                gridSpacing;
 
 
             const z =
                 (
                     iz -
                     (gridCount - 1) / 2
-                ) * gridSpacing;
+                )
+                *
+                gridSpacing;
 
+
+            // ------------------------------------------
+            // Create vector
+            // ------------------------------------------
 
             const vector =
                 createEffectiveVector();
@@ -289,7 +454,9 @@ for (
             );
 
 
-            // Invisible selection area
+            // ------------------------------------------
+            // Invisible hit area
+            // ------------------------------------------
 
             const hitBox =
                 new THREE.Mesh(
@@ -312,10 +479,16 @@ for (
             );
 
 
+            // ------------------------------------------
+            // Store vector information
+            // ------------------------------------------
+
             effectiveVectors.push({
 
                 x: x,
+
                 y: y,
+
                 z: z,
 
                 group: vector,
@@ -329,7 +502,7 @@ for (
 
 
 // ==================================================
-// 12. RAYCASTER
+// 14. RAYCASTER
 // ==================================================
 
 const raycaster =
@@ -340,47 +513,60 @@ const pointer =
 
 
 // ==================================================
-// 13. VECTOR NAME DISPLAY
+// 15. VECTOR NAME DISPLAY
 // ==================================================
 
 const vectorLabel =
     document.createElement("div");
 
+
 vectorLabel.style.position =
     "fixed";
+
 
 vectorLabel.style.left =
     "50%";
 
+
 vectorLabel.style.bottom =
     "20px";
+
 
 vectorLabel.style.transform =
     "translateX(-50%)";
 
+
 vectorLabel.style.padding =
     "8px 12px";
+
 
 vectorLabel.style.background =
     "rgba(0, 0, 0, 0.75)";
 
+
 vectorLabel.style.color =
     "white";
+
 
 vectorLabel.style.fontFamily =
     "Arial";
 
+
 vectorLabel.style.fontSize =
     "16px";
+
 
 vectorLabel.style.borderRadius =
     "6px";
 
+
 vectorLabel.style.zIndex =
     "100";
 
+
 vectorLabel.style.display =
     "none";
+
 
 document.body.appendChild(
     vectorLabel
@@ -388,7 +574,7 @@ document.body.appendChild(
 
 
 // ==================================================
-// 14. MAIN VECTOR HIT BOX
+// 16. MAIN VECTOR HIT BOX
 // ==================================================
 
 const phiHitBox =
@@ -406,13 +592,14 @@ const phiHitBox =
         })
     );
 
+
 scene.add(
     phiHitBox
 );
 
 
 // ==================================================
-// 15. UPDATE EFFECTIVE VECTOR APPEARANCE
+// 17. UPDATE ONE EFFECTIVE VECTOR
 // ==================================================
 
 function updateEffectiveVector(
@@ -508,7 +695,7 @@ function updateEffectiveVector(
 
 
     // ==================================================
-    // CENTER THE VECTOR
+    // CENTER OF VECTOR
     // ==================================================
 
     data.group.position.set(
@@ -519,58 +706,57 @@ function updateEffectiveVector(
 
 
     // ==================================================
-    // Orient the complete vector
+    // ORIENT VECTOR
+    //
+    // Local +Y direction becomes
+    // the calculated effective direction.
     // ==================================================
 
     data.group.quaternion.setFromUnitVectors(
-        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(
+            0,
+            1,
+            0
+        ),
+
         effectiveDirection
     );
 
 
     // ==================================================
-    // Position shaft and head
-    //
-    // Local Y-axis is the vector direction.
-    // The complete vector extends equally around
-    // the center.
+    // VECTOR DIMENSIONS
     // ==================================================
-
-    const totalLength =
-        vectorLength;
-
-
-    const headLength =
-        totalLength * 0.28;
-
-
-    const shaftLength =
-        totalLength - headLength;
-
 
     const head =
         data.group.userData.head;
-
 
     const shaft =
         data.group.userData.shaft;
 
 
-    // --------------------------------------------------
-    // Shaft extends from the center toward the head
-    // --------------------------------------------------
+    const headLength =
+        vectorLength * 0.28;
+
+
+    const shaftLength =
+        vectorLength -
+        headLength;
+
+
+    // ==================================================
+    // CENTER THE SHAFT
+    // ==================================================
 
     shaft.position.y =
-        -totalLength / 2 +
-        shaftLength / 2;
+        -headLength / 2;
 
 
-    // --------------------------------------------------
-    // Arrowhead sits at the positive end
-    // --------------------------------------------------
+    // ==================================================
+    // CENTER THE ARROWHEAD
+    // ==================================================
 
     head.position.y =
-        totalLength / 2 -
+        vectorLength / 2 -
         headLength / 2;
 
 
@@ -586,7 +772,12 @@ function updateEffectiveVector(
 
 
     data.hitBox.quaternion.setFromUnitVectors(
-        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(
+            0,
+            1,
+            0
+        ),
+
         effectiveDirection
     );
 
@@ -613,14 +804,14 @@ function updateEffectiveVector(
 
 
 // ==================================================
-// 16. UPDATE ALL VECTORS
+// 18. UPDATE ALL VECTORS
 // ==================================================
 
 function updateVectors() {
 
 
     // ==================================================
-    // Read Φ direction
+    // Read α, β, γ
     // ==================================================
 
     const alpha =
@@ -640,7 +831,7 @@ function updateVectors() {
 
 
     // ==================================================
-    // Read Φ position
+    // Read a, b, c
     // ==================================================
 
     const a =
@@ -671,6 +862,8 @@ function updateVectors() {
         );
 
 
+    // Prevent zero vector
+
     if (
         phiDirection.length() === 0
     ) {
@@ -687,7 +880,7 @@ function updateVectors() {
 
 
     // ==================================================
-    // Φ position
+    // Φ POSITION
     // ==================================================
 
     const phiPosition =
@@ -699,7 +892,7 @@ function updateVectors() {
 
 
     // ==================================================
-    // Update main vector
+    // UPDATE MAIN VECTOR Φ
     // ==================================================
 
     phiArrow.position.copy(
@@ -718,7 +911,7 @@ function updateVectors() {
 
 
     // ==================================================
-    // Main-vector hit area
+    // MAIN VECTOR HIT AREA
     // ==================================================
 
     phiHitBox.position.copy(
@@ -729,12 +922,19 @@ function updateVectors() {
     phiHitBox.position.add(
         phiDirection
             .clone()
-            .multiplyScalar(0.3)
+            .multiplyScalar(
+                0.3
+            )
     );
 
 
     phiHitBox.quaternion.setFromUnitVectors(
-        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(
+            0,
+            1,
+            0
+        ),
+
         phiDirection
     );
 
@@ -756,7 +956,7 @@ function updateVectors() {
 
 
     // ==================================================
-    // Update effective-vector field
+    // UPDATE EFFECTIVE FIELD
     // ==================================================
 
     for (
@@ -775,7 +975,7 @@ function updateVectors() {
 
 
 // ==================================================
-// 17. INPUT EVENTS
+// 19. INPUT EVENTS
 // ==================================================
 
 alphaInput.addEventListener(
@@ -783,25 +983,30 @@ alphaInput.addEventListener(
     updateVectors
 );
 
+
 betaInput.addEventListener(
     "input",
     updateVectors
 );
+
 
 gammaInput.addEventListener(
     "input",
     updateVectors
 );
 
+
 posAInput.addEventListener(
     "input",
     updateVectors
 );
 
+
 posBInput.addEventListener(
     "input",
     updateVectors
 );
+
 
 posCInput.addEventListener(
     "input",
@@ -810,14 +1015,14 @@ posCInput.addEventListener(
 
 
 // ==================================================
-// 18. INITIAL UPDATE
+// 20. INITIAL UPDATE
 // ==================================================
 
 updateVectors();
 
 
 // ==================================================
-// 19. SELECT VECTOR
+// 21. SELECT VECTOR
 // ==================================================
 
 function selectVector(event) {
@@ -836,7 +1041,11 @@ function selectVector(event) {
             )
             /
             rect.width
-        ) * 2 - 1;
+        )
+        *
+        2
+        -
+        1;
 
 
     pointer.y =
@@ -847,7 +1056,11 @@ function selectVector(event) {
             )
             /
             rect.height
-        ) * 2 + 1;
+        )
+        *
+        2
+        +
+        1;
 
 
     raycaster.setFromCamera(
@@ -856,9 +1069,9 @@ function selectVector(event) {
     );
 
 
-    // ----------------------------------------------
-    // Selectable objects
-    // ----------------------------------------------
+    // ==================================================
+    // SELECTABLE OBJECTS
+    // ==================================================
 
     const selectableObjects =
         [
@@ -881,9 +1094,9 @@ function selectVector(event) {
     }
 
 
-    // ----------------------------------------------
-    // Raycast
-    // ----------------------------------------------
+    // ==================================================
+    // RAYCAST
+    // ==================================================
 
     const intersections =
         raycaster.intersectObjects(
@@ -892,9 +1105,9 @@ function selectVector(event) {
         );
 
 
-    // ----------------------------------------------
-    // Display name
-    // ----------------------------------------------
+    // ==================================================
+    // DISPLAY NAME
+    // ==================================================
 
     if (
         intersections.length > 0
@@ -905,7 +1118,6 @@ function selectVector(event) {
                 .object
                 .userData
                 .vectorName;
-
         vectorLabel.style.display =
             "block";
 
@@ -920,7 +1132,7 @@ function selectVector(event) {
 
 
 // ==================================================
-// 20. MOUSE + TOUCH
+// 22. MOUSE + TOUCH
 // ==================================================
 
 renderer.domElement.addEventListener(
@@ -930,7 +1142,7 @@ renderer.domElement.addEventListener(
 
 
 // ==================================================
-// 21. ANIMATION LOOP
+// 23. ANIMATION LOOP
 // ==================================================
 
 function animate() {
@@ -949,11 +1161,12 @@ function animate() {
     );
 }
 
+
 animate();
 
 
 // ==================================================
-// 22. WINDOW RESIZE
+// 24. WINDOW RESIZE
 // ==================================================
 
 window.addEventListener(
