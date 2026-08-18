@@ -11,7 +11,7 @@ import { OrbitControls }
 const scene = new THREE.Scene();
 
 scene.background =
-    new THREE.Color(0xFFFFFF);
+    new THREE.Color(0x87CEEB);
 
 
 // ==================================================
@@ -134,17 +134,9 @@ scene.add(phiArrow);
 // 8. FIELD SETTINGS
 // ==================================================
 
-// Distance between neighboring sample points.
-
-const gridSpacing = 0.35;
-
-
-// Number of sample points along each direction.
+const gridSpacing = 1.5;
 
 const gridCount = 9;
-
-
-// Small visual length of every effective vector.
 
 const vectorLength = 0.35;
 
@@ -156,25 +148,116 @@ const vectorLength = 0.35;
 const effectiveVectors = [];
 
 
-// Create one reusable arrow geometry/material
-// for the complete field.
+// ==================================================
+// 10. CREATE EFFECTIVE VECTOR
+// ==================================================
 
-const fieldDirection =
-    new THREE.Vector3(1, 0, 0);
+function createEffectiveVector() {
 
-const fieldOrigin =
-    new THREE.Vector3(0, 0, 0);
+    const group =
+        new THREE.Group();
 
 
-// --------------------------------------------------
-// Create the sampling positions
-// --------------------------------------------------
+    // --------------------------------------------------
+    // Shaft
+    // --------------------------------------------------
 
-for (let ix = 0; ix < gridCount; ix++) {
+    const shaftGeometry =
+        new THREE.CylinderGeometry(
+            0.025,
+            0.025,
+            vectorLength * 0.72,
+            8,
+            1,
+            false
+        );
 
-    for (let iy = 0; iy < gridCount; iy++) {
 
-        for (let iz = 0; iz < gridCount; iz++) {
+    const shaftMaterial =
+        new THREE.MeshBasicMaterial({
+            color: 0x6FA8DC
+        });
+
+
+    const shaft =
+        new THREE.Mesh(
+            shaftGeometry,
+            shaftMaterial
+        );
+
+
+    group.add(shaft);
+
+
+    // --------------------------------------------------
+    // Arrowhead
+    // --------------------------------------------------
+
+    const headLength =
+        vectorLength * 0.28;
+
+
+    const headGeometry =
+        new THREE.ConeGeometry(
+            0.07,
+            headLength,
+            10
+        );
+
+
+    const headMaterial =
+        new THREE.MeshBasicMaterial({
+            color: 0x00008B
+        });
+
+
+    const head =
+        new THREE.Mesh(
+            headGeometry,
+            headMaterial
+        );
+
+
+    group.add(head);
+
+
+    // --------------------------------------------------
+    // Store parts
+    // --------------------------------------------------
+
+    group.userData.shaft =
+        shaft;
+
+    group.userData.head =
+        head;
+
+
+    return group;
+}
+
+
+// ==================================================
+// 11. CREATE SAMPLING FIELD
+// ==================================================
+
+for (
+    let ix = 0;
+    ix < gridCount;
+    ix++
+) {
+
+    for (
+        let iy = 0;
+        iy < gridCount;
+        iy++
+    ) {
+
+        for (
+            let iz = 0;
+            iz < gridCount;
+            iz++
+        ) {
+
 
             const x =
                 (
@@ -182,11 +265,13 @@ for (let ix = 0; ix < gridCount; ix++) {
                     (gridCount - 1) / 2
                 ) * gridSpacing;
 
+
             const y =
                 (
                     iy -
                     (gridCount - 1) / 2
                 ) * gridSpacing;
+
 
             const z =
                 (
@@ -195,18 +280,16 @@ for (let ix = 0; ix < gridCount; ix++) {
                 ) * gridSpacing;
 
 
-            const arrow =
-                new THREE.ArrowHelper(
-                    fieldDirection,
-                    fieldOrigin,
-                    vectorLength,
-                    0x0000ff
-                );
-
-            scene.add(arrow);
+            const vector =
+                createEffectiveVector();
 
 
-            // Invisible selectable object
+            scene.add(
+                vector
+            );
+
+
+            // Invisible selection area
 
             const hitBox =
                 new THREE.Mesh(
@@ -223,7 +306,10 @@ for (let ix = 0; ix < gridCount; ix++) {
                     })
                 );
 
-            scene.add(hitBox);
+
+            scene.add(
+                hitBox
+            );
 
 
             effectiveVectors.push({
@@ -232,7 +318,7 @@ for (let ix = 0; ix < gridCount; ix++) {
                 y: y,
                 z: z,
 
-                arrow: arrow,
+                group: vector,
 
                 hitBox: hitBox
 
@@ -243,7 +329,7 @@ for (let ix = 0; ix < gridCount; ix++) {
 
 
 // ==================================================
-// 10. RAYCASTER
+// 12. RAYCASTER
 // ==================================================
 
 const raycaster =
@@ -254,7 +340,7 @@ const pointer =
 
 
 // ==================================================
-// 11. VECTOR NAME DISPLAY
+// 13. VECTOR NAME DISPLAY
 // ==================================================
 
 const vectorLabel =
@@ -302,7 +388,7 @@ document.body.appendChild(
 
 
 // ==================================================
-// 12. MAIN VECTOR HIT BOX
+// 14. MAIN VECTOR HIT BOX
 // ==================================================
 
 const phiHitBox =
@@ -320,46 +406,261 @@ const phiHitBox =
         })
     );
 
-scene.add(phiHitBox);
+scene.add(
+    phiHitBox
+);
 
 
 // ==================================================
-// 13. UPDATE VECTOR FIELD
+// 15. UPDATE EFFECTIVE VECTOR APPEARANCE
+// ==================================================
+
+function updateEffectiveVector(
+    data,
+    phiDirection,
+    a,
+    b,
+    c
+) {
+
+
+    const x =
+        data.x;
+
+    const y =
+        data.y;
+
+    const z =
+        data.z;
+
+
+    // ==================================================
+    // r = (x-a)i + (y-b)j + (z-c)k
+    // ==================================================
+
+    const r =
+        new THREE.Vector3(
+            x - a,
+            y - b,
+            z - c
+        );
+
+
+    // ==================================================
+    // Singular point
+    // ==================================================
+
+    if (
+        r.length() === 0
+    ) {
+
+        data.group.visible =
+            false;
+
+        data.hitBox.visible =
+            false;
+
+        return;
+    }
+
+
+    data.group.visible =
+        true;
+
+    data.hitBox.visible =
+        true;
+
+
+    // ==================================================
+    // r-hat
+    // ==================================================
+
+    r.normalize();
+
+
+    // ==================================================
+    // r-hat · Φ-hat
+    // ==================================================
+
+    const dot =
+        r.dot(
+            phiDirection
+        );
+
+
+    // ==================================================
+    // φ-hat
+    //
+    // φ-hat =
+    // 2(r-hat · Φ-hat)r-hat - Φ-hat
+    // ==================================================
+
+    const effectiveDirection =
+        r
+            .clone()
+            .multiplyScalar(
+                2 * dot
+            )
+            .sub(
+                phiDirection
+            )
+            .normalize();
+
+
+    // ==================================================
+    // CENTER THE VECTOR
+    // ==================================================
+
+    data.group.position.set(
+        x,
+        y,
+        z
+    );
+
+
+    // ==================================================
+    // Orient the complete vector
+    // ==================================================
+
+    data.group.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        effectiveDirection
+    );
+
+
+    // ==================================================
+    // Position shaft and head
+    //
+    // Local Y-axis is the vector direction.
+    // The complete vector extends equally around
+    // the center.
+    // ==================================================
+
+    const totalLength =
+        vectorLength;
+
+
+    const headLength =
+        totalLength * 0.28;
+
+
+    const shaftLength =
+        totalLength - headLength;
+
+
+    const head =
+        data.group.userData.head;
+
+
+    const shaft =
+        data.group.userData.shaft;
+
+
+    // --------------------------------------------------
+    // Shaft extends from the center toward the head
+    // --------------------------------------------------
+
+    shaft.position.y =
+        -totalLength / 2 +
+        shaftLength / 2;
+
+
+    // --------------------------------------------------
+    // Arrowhead sits at the positive end
+    // --------------------------------------------------
+
+    head.position.y =
+        totalLength / 2 -
+        headLength / 2;
+
+
+    // ==================================================
+    // UPDATE HIT AREA
+    // ==================================================
+
+    data.hitBox.position.set(
+        x,
+        y,
+        z
+    );
+
+
+    data.hitBox.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        effectiveDirection
+    );
+
+
+    // ==================================================
+    // VECTOR NAME
+    // ==================================================
+
+    data.hitBox.userData.vectorName =
+        "vector φ_(" +
+        x.toFixed(2) +
+        "," +
+        y.toFixed(2) +
+        "," +
+        z.toFixed(2) +
+        ") = (" +
+        effectiveDirection.x.toFixed(3) +
+        "," +
+        effectiveDirection.y.toFixed(3) +
+        "," +
+        effectiveDirection.z.toFixed(3) +
+        ")";
+}
+
+
+// ==================================================
+// 16. UPDATE ALL VECTORS
 // ==================================================
 
 function updateVectors() {
 
 
     // ==================================================
-    // Read α, β, γ
+    // Read Φ direction
     // ==================================================
 
     const alpha =
-        Number(alphaInput.value);
+        Number(
+            alphaInput.value
+        );
 
     const beta =
-        Number(betaInput.value);
+        Number(
+            betaInput.value
+        );
 
     const gamma =
-        Number(gammaInput.value);
+        Number(
+            gammaInput.value
+        );
 
 
     // ==================================================
-    // Read a, b, c
+    // Read Φ position
     // ==================================================
 
     const a =
-        Number(posAInput.value);
+        Number(
+            posAInput.value
+        );
 
     const b =
-        Number(posBInput.value);
+        Number(
+            posBInput.value
+        );
 
     const c =
-        Number(posCInput.value);
+        Number(
+            posCInput.value
+        );
 
 
     // ==================================================
-    // MAIN VECTOR DIRECTION
+    // Create Φ direction
     // ==================================================
 
     const phiDirection =
@@ -369,8 +670,6 @@ function updateVectors() {
             gamma
         );
 
-
-    // Prevent zero direction.
 
     if (
         phiDirection.length() === 0
@@ -388,7 +687,7 @@ function updateVectors() {
 
 
     // ==================================================
-    // MAIN VECTOR POSITION
+    // Φ position
     // ==================================================
 
     const phiPosition =
@@ -400,16 +699,18 @@ function updateVectors() {
 
 
     // ==================================================
-    // UPDATE MAIN VECTOR Φ
+    // Update main vector
     // ==================================================
 
     phiArrow.position.copy(
         phiPosition
     );
 
+
     phiArrow.setDirection(
         phiDirection
     );
+
 
     phiArrow.setLength(
         0.6
@@ -417,12 +718,13 @@ function updateVectors() {
 
 
     // ==================================================
-    // MAIN VECTOR HIT AREA
+    // Main-vector hit area
     // ==================================================
 
     phiHitBox.position.copy(
         phiPosition
     );
+
 
     phiHitBox.position.add(
         phiDirection
@@ -439,182 +741,41 @@ function updateVectors() {
 
     phiHitBox.userData.vectorName =
         "vector Φ_(" +
-        alpha + "," +
-        beta + "," +
+        alpha +
+        "," +
+        beta +
+        "," +
         gamma +
         ") at (" +
-        a + "," +
-        b + "," +
+        a +
+        "," +
+        b +
+        "," +
         c +
         ")";
 
 
     // ==================================================
-    // UPDATE EFFECTIVE VECTOR FIELD
+    // Update effective-vector field
     // ==================================================
 
     for (
         const data of effectiveVectors
     ) {
 
-
-        const x =
-            data.x;
-
-        const y =
-            data.y;
-
-        const z =
-            data.z;
-
-
-        // ==================================================
-        // r = (x-a)i + (y-b)j + (z-c)k
-        // ==================================================
-
-        const r =
-            new THREE.Vector3(
-                x - a,
-                y - b,
-                z - c
-            );
-
-
-        // ==================================================
-        // Singular point
-        //
-        // At (x,y,z) = (a,b,c):
-        //
-        // r = 0
-        //
-        // Therefore r-hat is undefined.
-        // ==================================================
-
-        if (
-            r.length() === 0
-        ) {
-
-            data.arrow.visible =
-                false;
-
-            data.hitBox.visible =
-                false;
-
-            continue;
-        }
-
-
-        data.arrow.visible =
-            true;
-
-        data.hitBox.visible =
-            true;
-
-
-        // ==================================================
-        // r-hat
-        // ==================================================
-
-        r.normalize();
-
-
-        // ==================================================
-        // r-hat · Φ-hat
-        // ==================================================
-
-        const dot =
-            r.dot(
-                phiDirection
-            );
-
-
-        // ==================================================
-        // φ-hat
-        //
-        // φ-hat =
-        // 2(r-hat · Φ-hat)r-hat - Φ-hat
-        // ==================================================
-
-        const effectiveDirection =
-            r
-                .clone()
-                .multiplyScalar(
-                    2 * dot
-                )
-                .sub(
-                    phiDirection
-                )
-                .normalize();
-
-
-        // ==================================================
-        // UPDATE VISIBLE VECTOR
-        // ==================================================
-
-        data.arrow.position.set(
-            x,
-            y,
-            z
+        updateEffectiveVector(
+            data,
+            phiDirection,
+            a,
+            b,
+            c
         );
-
-        data.arrow.setDirection(
-            effectiveDirection
-        );
-
-        data.arrow.setLength(
-            vectorLength
-        );
-
-
-        // ==================================================
-        // UPDATE HIT AREA
-        // ==================================================
-
-        data.hitBox.position.set(
-            x,
-            y,
-            z
-        );
-
-        data.hitBox.position.add(
-            effectiveDirection
-                .clone()
-                .multiplyScalar(
-                    vectorLength / 2
-                )
-        );
-
-
-        data.hitBox.quaternion.setFromUnitVectors(
-            new THREE.Vector3(0, 1, 0),
-            effectiveDirection
-        );
-
-
-        // ==================================================
-        // VECTOR NAME
-        // ==================================================
-
-        data.hitBox.userData.vectorName =
-            "vector φ_(" +
-            x.toFixed(2) +
-            "," +
-            y.toFixed(2) +
-            "," +
-            z.toFixed(2) +
-            ") = (" +
-            effectiveDirection.x.toFixed(3) +
-            "," +
-            effectiveDirection.y.toFixed(3) +
-            "," +
-            effectiveDirection.z.toFixed(3) +
-            ")";
     }
 }
 
 
 // ==================================================
-// 14. INPUT EVENTS
+// 17. INPUT EVENTS
 // ==================================================
 
 alphaInput.addEventListener(
@@ -649,14 +810,14 @@ posCInput.addEventListener(
 
 
 // ==================================================
-// 15. INITIAL UPDATE
+// 18. INITIAL UPDATE
 // ==================================================
 
 updateVectors();
 
 
 // ==================================================
-// 16. SELECT VECTOR
+// 19. SELECT VECTOR
 // ==================================================
 
 function selectVector(event) {
@@ -696,11 +857,13 @@ function selectVector(event) {
 
 
     // ----------------------------------------------
-    // Collect selectable objects
+    // Selectable objects
     // ----------------------------------------------
 
     const selectableObjects =
-        [phiHitBox];
+        [
+            phiHitBox
+        ];
 
 
     for (
@@ -757,7 +920,7 @@ function selectVector(event) {
 
 
 // ==================================================
-// 17. MOUSE + TOUCH
+// 20. MOUSE + TOUCH
 // ==================================================
 
 renderer.domElement.addEventListener(
@@ -767,7 +930,7 @@ renderer.domElement.addEventListener(
 
 
 // ==================================================
-// 18. ANIMATION LOOP
+// 21. ANIMATION LOOP
 // ==================================================
 
 function animate() {
@@ -790,7 +953,7 @@ animate();
 
 
 // ==================================================
-// 19. WINDOW RESIZE
+// 22. WINDOW RESIZE
 // ==================================================
 
 window.addEventListener(
@@ -800,6 +963,7 @@ window.addEventListener(
         camera.aspect =
             window.innerWidth /
             window.innerHeight;
+
 
         camera.updateProjectionMatrix();
 
